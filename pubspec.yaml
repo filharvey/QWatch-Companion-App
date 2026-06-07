@@ -1,0 +1,44 @@
+name: qwatch_app
+description: Companion app for the QWatch ESP32-S3 smartwatch.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # BLE
+  flutter_blue_plus: ^1.35.3
+
+  # Charts (step history)
+  fl_chart: ^0.69.0
+
+  # WiFi scanning (Android only; iOS shows manual entry)
+  wifi_scan: ^0.4.1
+
+  # Runtime permissions
+  permission_handler: ^11.3.1
+
+  # State management
+  provider: ^6.1.2
+
+  # HTTP for Open-Meteo weather API
+  http: ^1.2.2
+
+  # Device GPS for weather location
+  geolocator: ^13.0.2
+
+  # Background execution (foreground service on Android, background mode on iOS)
+  flutter_background_service: ^5.0.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/watch_faces/
