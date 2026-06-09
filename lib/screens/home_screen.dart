@@ -5,8 +5,16 @@ import 'wifi_setup_screen.dart';
 import 'steps_screen.dart';
 import 'settings_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _sendingTime = false;
+  bool _sendingWeather = false;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +24,18 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('QWatch')),
       body: ble.isConnected ? _connected(context, ble) : _disconnected(context, ble),
     );
+  }
+
+  Future<void> _tapSendTime(BleManager ble) async {
+    setState(() => _sendingTime = true);
+    await ble.sendTimeNow();
+    if (mounted) setState(() => _sendingTime = false);
+  }
+
+  Future<void> _tapSendWeather(BleManager ble) async {
+    setState(() => _sendingWeather = true);
+    await ble.sendWeatherNow();
+    if (mounted) setState(() => _sendingWeather = false);
   }
 
   Widget _disconnected(BuildContext context, BleManager ble) {
@@ -97,10 +117,90 @@ class HomeScreen extends StatelessWidget {
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const SettingsScreen())),
               ),
+              const SizedBox(height: 8),
+              _DebugCard(
+                sendingTime: _sendingTime,
+                sendingWeather: _sendingWeather,
+                onSendTime: () => _tapSendTime(ble),
+                onSendWeather: () => _tapSendWeather(ble),
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DebugCard extends StatelessWidget {
+  final bool sendingTime;
+  final bool sendingWeather;
+  final VoidCallback onSendTime;
+  final VoidCallback onSendWeather;
+
+  const _DebugCard({
+    required this.sendingTime,
+    required this.sendingWeather,
+    required this.onSendTime,
+    required this.onSendWeather,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.bug_report,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text('Debug',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        )),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: sendingTime ? null : onSendTime,
+                    icon: sendingTime
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.access_time, size: 18),
+                    label: const Text('Send Time'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: sendingWeather ? null : onSendWeather,
+                    icon: sendingWeather
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.cloud, size: 18),
+                    label: const Text('Send Weather'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

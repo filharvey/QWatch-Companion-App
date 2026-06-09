@@ -250,6 +250,9 @@ class BleManager extends ChangeNotifier {
     }
   }
 
+  Future<void> sendTimeNow() => _sendTime();
+  Future<void> sendWeatherNow() => _fetchAndSendWeather();
+
   Future<void> _sendTime() async {
     final c = _chars[QWatchUUIDs.time];
     if (c == null) {

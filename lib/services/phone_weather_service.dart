@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
@@ -25,24 +26,60 @@ class WeatherResult {
 class PhoneWeatherService {
   static Future<Position?> _getLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return null;
+    if (!serviceEnabled) {
+      print('[weather] Location services disabled');
+      return null;
+    }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return null;
+      if (permission == LocationPermission.denied) {
+        print('[weather] Location permission denied');
+        return null;
+      }
     }
-    if (permission == LocationPermission.deniedForever) return null;
+    if (permission == LocationPermission.deniedForever) {
+      print('[weather] Location permission permanently denied');
+      return null;
+    }
 
-    return Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: Duration(seconds: 10),
-      ),
-    );
+    // Prefer a cached fix — instant and good enough for weather.
+    try {
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) {
+        print('[weather] Using cached location');
+        return last;
+      }
+    } catch (_) {}
+
+    // No cache — request a fresh fix with a generous timeout.
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
+    } on TimeoutException {
+      print('[weather] GPS timed out — no location available');
+      return null;
+    } catch (e) {
+      print('[weather] Location error: $e');
+      return null;
+    }
   }
 
   static Future<WeatherResult?> fetch() async {
+    try {
+      return await _fetch();
+    } catch (e, st) {
+      print('[weather] Unexpected error: $e\n$st');
+      return null;
+    }
+  }
+
+  static Future<WeatherResult?> _fetch() async {
     final position = await _getLocation();
     if (position == null) {
       print('[weather] Could not get device location');
@@ -84,3 +121,4 @@ class PhoneWeatherService {
     return result;
   }
 }
+

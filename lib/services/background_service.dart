@@ -1,29 +1,10 @@
 import 'dart:async';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Called from main() before runApp().
+/// Note: the "qwatch_sync" notification channel is created natively in
+/// Application.kt so it exists before the service calls startForeground().
 Future<void> initBackgroundService() async {
-  // Android 13+ requires the notification channel to exist before the
-  // foreground service can call startForeground() — create it explicitly.
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'qwatch_sync',
-    'QWatch Sync',
-    description: 'Keeps QWatch time and weather in sync',
-    importance: Importance.low,
-  );
-  final FlutterLocalNotificationsPlugin fln = FlutterLocalNotificationsPlugin();
-  await fln
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-  // Also request POST_NOTIFICATIONS permission (Android 13+).
-  await fln
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.requestNotificationsPermission();
-
   final service = FlutterBackgroundService();
   await service.configure(
     androidConfiguration: AndroidConfiguration(
